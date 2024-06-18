@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Vinkla\Hashids\Facades\Hashids;
 
 class Item extends Model
 {
@@ -28,4 +29,26 @@ class Item extends Model
     protected $casts = [
         'price' => 'decimal:2',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            // Do nothing on creating, we will set hashid after the item is created
+        });
+
+        static::created(function ($model) {
+            $model->hashid = Hashids::encode($model->id);
+            $model->save();
+        });
+
+        static::updated(function ($model) {
+            // Ensure hashid is updated or created again if necessary
+            if (empty($model->hashid)) {
+                $model->hashid = Hashids::encode($model->id);
+                $model->save();
+            }
+        });
+    }
 }
